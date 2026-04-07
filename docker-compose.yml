@@ -1,0 +1,28 @@
+services:
+  rc-inventario:
+    build:
+      context: ./rc-inventario
+      args:
+        NODE_AUTH_TOKEN: ${NODE_AUTH_TOKEN}
+    ports:
+      - "4201:80"
+    networks:
+      - rc-network
+
+  rc-shell:
+    build:
+      context: ./rc-shell
+      args:
+        NODE_AUTH_TOKEN: ${NODE_AUTH_TOKEN}
+    ports:
+      - "4200:80"
+    environment:
+      - RC_INVENTARIO_URL=http://localhost:4201
+    depends_on:
+      - rc-inventario
+    networks:
+      - rc-network
+
+networks:
+  rc-network:
+    driver: bridge
