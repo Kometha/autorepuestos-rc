@@ -1,0 +1,38 @@
+{
+  "version": "1.0.0",
+  "modules": [
+    {
+      "name": "rc-inventario",
+      "slug": "inventario",
+      "label": "Inventario",
+      "port": 4201,
+      "urls": {
+        "local": "http://localhost:4201/remoteEntry.json",
+        "qa": "",
+        "prod": ""
+      }
+    },
+    {
+      "name": "rc-rrhh",
+      "slug": "rrhh",
+      "label": "RRHH",
+      "port": 4202,
+      "urls": {
+        "local": "http://localhost:4202/remoteEntry.json",
+        "qa": "",
+        "prod": ""
+      }
+    },
+    {
+      "name": "rc-contabilidad",
+      "slug": "contabilidad",
+      "label": "Contabilidad",
+      "port": 4203,
+      "urls": {
+        "local": "http://localhost:4203/remoteEntry.json",
+        "qa": "",
+        "prod": ""
+      }
+    }
+  ]
+}
