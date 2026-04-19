@@ -33,6 +33,17 @@
         "qa": "",
         "prod": ""
       }
+    },
+    {
+      "name": "rc-caja",
+      "slug": "caja",
+      "label": "Caja",
+      "port": 4204,
+      "urls": {
+        "local": "http://localhost:4204/remoteEntry.json",
+        "qa": "",
+        "prod": ""
+      }
     }
   ]
 }
