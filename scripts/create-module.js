@@ -608,6 +608,27 @@ async function createParentModule(qaUrl, prodUrl) {
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 async function main() {
+  if (!isChild && fs.existsSync(moduleDir)) {
+    console.error(`❌ El módulo ${moduleName} ya existe en ${moduleDir}`);
+    console.error(
+      `   Si querés agregar una pantalla usá: npm run create-module ${moduleName} -- --child nombrePantalla`,
+    );
+    process.exit(1);
+  }
+
+  if (!isChild) {
+    try {
+      execSync(`gh repo view ${org}/${moduleName} --json name`, { stdio: 'pipe' });
+      console.error(`❌ El repositorio ${org}/${moduleName} ya existe en GitHub.`);
+      console.error(
+        `   Si querés agregar una pantalla usá: npm run create-module ${moduleName} -- --child nombrePantalla`,
+      );
+      process.exit(1);
+    } catch {
+      // El repo no existe, podemos continuar
+    }
+  }
+
   if (isChild) {
     const parentSlug = moduleName.replace("rc-", "");
     const moduleExists = fs.existsSync(path.join(rootDir, moduleName));
