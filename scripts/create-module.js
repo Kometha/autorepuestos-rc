@@ -365,50 +365,90 @@ function alignAngularVersion() {
 }
 
 function addChildToNavJson(parentSlug, childSlug) {
-  const navPath = path.join(rootDir, "rc-shell", "public", "nav.json");
-  const nav = JSON.parse(fs.readFileSync(navPath, "utf8"));
-  const childLabel = childSlug.charAt(0).toUpperCase() + childSlug.slice(1);
+  const navPath = path.join(rootDir, 'rc-shell', 'public', 'nav.json');
+  const nav = JSON.parse(fs.readFileSync(navPath, 'utf8'));
+  const childLabel = toClassName(childSlug).replace(/([A-Z])/g, ' $1').trim();
 
-  const parent = nav.find((item) => item.route === `/${parentSlug}`);
+  const parent = nav.find(item => item.route === `/${parentSlug}`);
   if (!parent) {
-    console.error(
-      `❌ No se encontró el módulo padre /${parentSlug} en nav.json`,
-    );
+    console.error(`❌ No se encontró el módulo padre /${parentSlug} en nav.json`);
     process.exit(1);
   }
 
+  const isFirstChild = !parent.children || parent.children.length === 0;
+
   if (!parent.children) parent.children = [];
 
-  const alreadyExists = parent.children.some(
-    (c) => c.route === `/${parentSlug}/${childSlug}`,
-  );
+  const alreadyExists = parent.children.some(c => c.route === `/${parentSlug}/${childSlug}`);
   if (alreadyExists) {
-    console.warn(
-      `⚠️ El child /${parentSlug}/${childSlug} ya existe en nav.json`,
-    );
+    console.warn(`⚠️ El child /${parentSlug}/${childSlug} ya existe en nav.json`);
     return;
+  }
+
+  // Si es el primer hijo, crear automáticamente el hijo "inicio" primero
+  if (isFirstChild) {
+    console.log(`\n🏠 Primer hijo detectado — creando hijo "inicio" automáticamente...`);
+    parent.children.push({
+      label: 'Inicio',
+      route: `/${parentSlug}/inicio`
+    });
   }
 
   parent.children.push({
     label: childLabel,
-    route: `/${parentSlug}/${childSlug}`,
+    route: `/${parentSlug}/${childSlug}`
   });
 
   fs.writeFileSync(navPath, JSON.stringify(nav, null, 2));
-  console.log(`✅ Child agregado al nav.json`);
+  console.log(`✅ Children agregados al nav.json`);
 }
 
 function addChildRoute(parentModuleName, childSlug) {
-  const routesPath = path.join(
-    rootDir,
-    parentModuleName,
-    "src",
-    "app",
-    "app.routes.ts",
-  );
-  const childLabel = childSlug.charAt(0).toUpperCase() + childSlug.slice(1);
-  const parentSlug = parentModuleName.replace("rc-", "");
+  const routesPath = path.join(rootDir, parentModuleName, 'src', 'app', 'app.routes.ts');
+  const className = toClassName(childSlug);
+  const parentSlug = parentModuleName.replace('rc-', '');
 
+  // Verificar si es el primer hijo
+  let routesContent = fs.readFileSync(routesPath, 'utf8');
+  const isFirstChild = !routesContent.includes('loadComponent');
+
+  if (isFirstChild) {
+    console.log(`\n🏠 Creando componente "inicio" automáticamente...`);
+
+    // Crear componente inicio
+    const inicioContent = `import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-inicio',
+  standalone: true,
+  template: \`
+    <div class="page-container">
+      <h1>${toClassName(parentSlug)}</h1>
+      <p>Bienvenido al módulo de ${toClassName(parentSlug).toLowerCase()}.</p>
+    </div>
+  \`
+})
+export class InicioComponent {}
+`;
+    const inicioDir = path.join(rootDir, parentModuleName, 'src', 'app', 'pages', 'inicio');
+    fs.mkdirSync(inicioDir, { recursive: true });
+    fs.writeFileSync(path.join(inicioDir, 'inicio.component.ts'), inicioContent);
+
+    // Agregar ruta de inicio
+    const inicioRoute = `  {
+    path: '${parentSlug}/inicio',
+    loadComponent: () => import('./pages/inicio/inicio.component').then(m => m.InicioComponent),
+  },`;
+
+    routesContent = routesContent.replace(
+      /export const routes: Routes = \[/,
+      `export const routes: Routes = [\n${inicioRoute}`
+    );
+
+    console.log(`✅ Componente InicioComponent creado`);
+  }
+
+  // Crear componente del hijo solicitado
   const componentContent = `import { Component } from '@angular/core';
 
 @Component({
@@ -416,109 +456,107 @@ function addChildRoute(parentModuleName, childSlug) {
   standalone: true,
   template: \`
     <div class="page-container">
-      <h1>${childLabel}</h1>
-      <p>${childLabel} works!</p>
+      <h1>${className}</h1>
+      <p>${className} works!</p>
     </div>
   \`
 })
-export class ${childLabel}Component {}
+export class ${className}Component {}
 `;
 
-  const pagesDir = path.join(
-    rootDir,
-    parentModuleName,
-    "src",
-    "app",
-    "pages",
-    childSlug,
-  );
+  const pagesDir = path.join(rootDir, parentModuleName, 'src', 'app', 'pages', childSlug);
   fs.mkdirSync(pagesDir, { recursive: true });
-  fs.writeFileSync(
-    path.join(pagesDir, `${childSlug}.component.ts`),
-    componentContent,
-  );
-  console.log(`✅ Componente ${childLabel}Component creado`);
+  fs.writeFileSync(path.join(pagesDir, `${childSlug}.component.ts`), componentContent);
+  console.log(`✅ Componente ${className}Component creado`);
 
-  let routesContent = fs.readFileSync(routesPath, "utf8");
-
+  // Agregar ruta del hijo solicitado
   const newRoute = `  {
     path: '${parentSlug}/${childSlug}',
-    loadComponent: () => import('./pages/${childSlug}/${childSlug}.component').then(m => m.${childLabel}Component),
+    loadComponent: () => import('./pages/${childSlug}/${childSlug}.component').then(m => m.${className}Component),
   },`;
 
   if (routesContent.includes(`path: '${parentSlug}/${childSlug}'`)) {
-    console.warn(
-      `⚠️ La ruta /${parentSlug}/${childSlug} ya existe en app.routes.ts`,
+    console.warn(`⚠️ La ruta /${parentSlug}/${childSlug} ya existe`);
+  } else {
+    routesContent = routesContent.replace(
+      /export const routes: Routes = \[/,
+      `export const routes: Routes = [\n${newRoute}`
     );
-    return;
   }
 
-  routesContent = routesContent.replace(
-    /export const routes: Routes = \[/,
-    `export const routes: Routes = [\n${newRoute}`,
-  );
-
   fs.writeFileSync(routesPath, routesContent);
-  console.log(`✅ Ruta agregada al app.routes.ts de ${parentModuleName}`);
+  console.log(`✅ Rutas agregadas al app.routes.ts de ${parentModuleName}`);
 }
 
 function addExposeToFederationConfig(parentModuleName, childSlug) {
-  const configPath = path.join(
-    rootDir,
-    parentModuleName,
-    "federation.config.js",
-  );
-  let content = fs.readFileSync(configPath, "utf8");
-  const childLabel = childSlug.charAt(0).toUpperCase() + childSlug.slice(1);
+  const configPath = path.join(rootDir, parentModuleName, 'federation.config.js');
+  let content = fs.readFileSync(configPath, 'utf8');
+  const className = toClassName(childSlug);
 
-  const newExpose = `    './${childLabel}': './src/app/pages/${childSlug}/${childSlug}.component.ts',`;
+  // Si es el primer hijo, agregar también el expose de Inicio
+  const isFirstChild = !content.includes("'./Inicio'");
 
-  if (content.includes(`'./${childLabel}'`)) {
-    console.warn(
-      `⚠️ El expose ./${childLabel} ya existe en federation.config.js`,
+  if (isFirstChild) {
+    content = content.replace(
+      /exposes: \{([^}]*)\}/s,
+      (match, inner) => `exposes: {${inner}    './Inicio': './src/app/pages/inicio/inicio.component.ts',\n  }`
     );
+    console.log(`✅ Expose Inicio agregado al federation.config.js`);
+  }
+
+  if (content.includes(`'./${className}'`)) {
+    console.warn(`⚠️ El expose ./${className} ya existe`);
     return;
   }
 
   content = content.replace(
     /exposes: \{([^}]*)\}/s,
-    (match, inner) => `exposes: {${inner}${newExpose}\n  }`,
+    (match, inner) => `exposes: {${inner}    './${className}': './src/app/pages/${childSlug}/${childSlug}.component.ts',\n  }`
   );
 
   fs.writeFileSync(configPath, content);
-  console.log(
-    `✅ Expose agregado al federation.config.js de ${parentModuleName}`,
-  );
+  console.log(`✅ Expose ${className} agregado al federation.config.js`);
 }
 
 function addChildRouteToShell(parentModuleName, childSlug) {
-  const routesPath = path.join(
-    rootDir,
-    "rc-shell",
-    "src",
-    "app",
-    "app.routes.ts",
-  );
-  let content = fs.readFileSync(routesPath, "utf8");
-  const parentSlug = parentModuleName.replace("rc-", "");
-  const childLabel = childSlug.charAt(0).toUpperCase() + childSlug.slice(1);
+  const routesPath = path.join(rootDir, 'rc-shell', 'src', 'app', 'app.routes.ts');
+  let content = fs.readFileSync(routesPath, 'utf8');
+  const parentSlug = parentModuleName.replace('rc-', '');
+  const className = toClassName(childSlug);
 
+  // Verificar si es el primer hijo chequeando si inicio ya existe
+  const isFirstChild = !content.includes(`path: '${parentSlug}/inicio'`);
+
+  if (isFirstChild) {
+    const inicioRoute = `  {
+    path: '${parentSlug}/inicio',
+    loadComponent: () => loadRemoteModule('${parentModuleName}', './Inicio').then((m) => m.InicioComponent),
+  },`;
+
+    content = content.replace(
+      /(\s*\{\s*\n\s*path: '',)/,
+      `\n${inicioRoute}\n$1`
+    );
+    console.log(`✅ Ruta inicio agregada al shell`);
+  }
+
+  // Agregar ruta del hijo solicitado
   const newRoute = `  {
     path: '${parentSlug}/${childSlug}',
-    loadComponent: () => loadRemoteModule('${parentModuleName}', './${childLabel}').then((m) => m.${childLabel}Component),
+    loadComponent: () => loadRemoteModule('${parentModuleName}', './${className}').then((m) => m.${className}Component),
   },`;
 
   if (content.includes(`path: '${parentSlug}/${childSlug}'`)) {
-    console.warn(
-      `⚠️ La ruta ${parentSlug}/${childSlug} ya existe en app.routes.ts del shell`,
+    console.warn(`⚠️ La ruta ${parentSlug}/${childSlug} ya existe en el shell`);
+  } else {
+    content = content.replace(
+      /(\s*\{\s*\n\s*path: '',)/,
+      `\n${newRoute}\n$1`
     );
-    return;
   }
 
-  content = content.replace(/(\s*\{\s*\n\s*path: '',)/, `\n${newRoute}\n$1`);
-
   fs.writeFileSync(routesPath, content);
-  console.log(`✅ Ruta child agregada al app.routes.ts del shell`);
+  console.log(`✅ Rutas child agregadas al app.routes.ts del shell`);
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
