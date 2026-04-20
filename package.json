@@ -14,7 +14,9 @@
     "contabilidad": "npm start --prefix rc-contabilidad -- --port 4203",
     "dev:contabilidad": "concurrently -n \"SHELL,CONTABILIDAD\" -c \"blue,cyan\" \"npm run shell\" \"npm run contabilidad\"",
     "caja": "npm start --prefix rc-caja -- --port 4204",
-    "dev:caja": "concurrently -n \"SHELL,CAJA\" -c \"blue,cyan\" \"npm run shell\" \"npm run caja\""
+    "dev:caja": "concurrently -n \"SHELL,CAJA\" -c \"blue,cyan\" \"npm run shell\" \"npm run caja\"",
+    "dashboard": "npm start --prefix rc-dashboard -- --port 4205",
+    "dev:dashboard": "concurrently -n \"SHELL,DASHBOARD\" -c \"blue,cyan\" \"npm run shell\" \"npm run dashboard\""
   },
   "devDependencies": {
     "concurrently": "^9.0.0"
