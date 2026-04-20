@@ -559,6 +559,53 @@ function addChildRouteToShell(parentModuleName, childSlug) {
   console.log(`✅ Rutas child agregadas al app.routes.ts del shell`);
 }
 
+async function createParentModule(qaUrl, prodUrl) {
+  console.log(`\n📦 Creando repositorio en GitHub...`);
+  run(`gh repo create ${org}/${moduleName} --private --clone`);
+
+  console.log(`\n⚙️  Creando proyecto Angular...`);
+  run(
+    `npx @angular/cli@21 new ${moduleName} --routing=false --style=scss --skip-git --directory ${moduleName}`,
+  );
+
+  createNpmrc();
+
+  console.log(`\n🔗 Instalando Native Federation...`);
+  run(
+    `npx ng add @angular-architects/native-federation@21 --project ${moduleName} --type remote --port ${port}`,
+    moduleDir,
+  );
+
+  console.log(`\n📐 Alineando versiones de Angular...`);
+  alignAngularVersion();
+  run(`npm install --legacy-peer-deps`, moduleDir);
+
+  console.log(`\n🎨 Instalando shared-ui...`);
+  run(`npm install @angular-mf/shared-ui@latest`, moduleDir);
+
+  console.log(`\n📝 Creando archivos...`);
+  createDockerfile();
+  createNginxConf();
+  createDockerignore();
+  createGithubAction();
+  updateFederationConfig();
+  updateStyles();
+  updateAppConfig();
+  updateAppRoutes();
+  updateAppHtml();
+
+  console.log(`\n🔧 Actualizando rc-shell y registry...`);
+  addToNavJson();
+  addToShellRoutes();
+  addToRegistry(qaUrl, prodUrl);
+  addToRootPackageJson();
+
+  console.log(`\n📤 Haciendo primer commit...`);
+  run(`git add .`, moduleDir);
+  run(`git commit -m "feat: initial setup ${moduleName}"`, moduleDir);
+  run(`git push origin main`, moduleDir);
+}
+
 // ─── Main ─────────────────────────────────────────────────────────────────────
 async function main() {
   if (isChild) {
@@ -586,53 +633,6 @@ async function main() {
       const qaUrl = await question(rl, `  URL QA: `);
       const prodUrl = await question(rl, `  URL Prod: `);
       rl.close();
-
-      async function createParentModule(qaUrl, prodUrl) {
-        console.log(`\n📦 Creando repositorio en GitHub...`);
-        run(`gh repo create ${org}/${moduleName} --private --clone`);
-
-        console.log(`\n⚙️  Creando proyecto Angular...`);
-        run(
-          `npx @angular/cli@21 new ${moduleName} --routing=false --style=scss --skip-git --directory ${moduleName}`,
-        );
-
-        createNpmrc();
-
-        console.log(`\n🔗 Instalando Native Federation...`);
-        run(
-          `npx ng add @angular-architects/native-federation@21 --project ${moduleName} --type remote --port ${port}`,
-          moduleDir,
-        );
-
-        console.log(`\n📐 Alineando versiones de Angular...`);
-        alignAngularVersion();
-        run(`npm install --legacy-peer-deps`, moduleDir);
-
-        console.log(`\n🎨 Instalando shared-ui...`);
-        run(`npm install @angular-mf/shared-ui@latest`, moduleDir);
-
-        console.log(`\n📝 Creando archivos...`);
-        createDockerfile();
-        createNginxConf();
-        createDockerignore();
-        createGithubAction();
-        updateFederationConfig();
-        updateStyles();
-        updateAppConfig();
-        updateAppRoutes();
-        updateAppHtml();
-
-        console.log(`\n🔧 Actualizando rc-shell y registry...`);
-        addToNavJson();
-        addToShellRoutes();
-        addToRegistry(qaUrl, prodUrl);
-        addToRootPackageJson();
-
-        console.log(`\n📤 Haciendo primer commit...`);
-        run(`git add .`, moduleDir);
-        run(`git commit -m "feat: initial setup ${moduleName}"`, moduleDir);
-        run(`git push origin main`, moduleDir);
-      }
     } else {
       const rl2 = readline.createInterface({
         input: process.stdin,
