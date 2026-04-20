@@ -44,6 +44,17 @@
         "qa": "",
         "prod": ""
       }
+    },
+    {
+      "name": "rc-dashboard",
+      "slug": "dashboard",
+      "label": "Dashboard",
+      "port": 4205,
+      "urls": {
+        "local": "http://localhost:4205/remoteEntry.json",
+        "qa": "",
+        "prod": ""
+      }
     }
   ]
 }
