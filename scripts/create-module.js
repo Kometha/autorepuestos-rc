@@ -61,6 +61,13 @@ function getNextPort() {
   return port;
 }
 
+function toClassName(slug) {
+  return slug
+    .split('-')
+    .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+    .join('');
+}
+
 function addToRootPackageJson() {
   const pkgPath = path.join(rootDir, "package.json");
   const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf8"));
@@ -654,6 +661,8 @@ async function main() {
       const qaUrl = await question(rl, `  URL QA: `);
       const prodUrl = await question(rl, `  URL Prod: `);
       rl.close();
+
+      await createParentModule(qaUrl.trim(), prodUrl.trim());
     } else {
       const rl2 = readline.createInterface({
         input: process.stdin,
