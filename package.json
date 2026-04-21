@@ -16,7 +16,9 @@
     "caja": "npm start --prefix rc-caja -- --port 4204",
     "dev:caja": "concurrently -n \"SHELL,CAJA\" -c \"blue,cyan\" \"npm run shell\" \"npm run caja\"",
     "dashboard": "npm start --prefix rc-dashboard -- --port 4205",
-    "dev:dashboard": "concurrently -n \"SHELL,DASHBOARD\" -c \"blue,cyan\" \"npm run shell\" \"npm run dashboard\""
+    "dev:dashboard": "concurrently -n \"SHELL,DASHBOARD\" -c \"blue,cyan\" \"npm run shell\" \"npm run dashboard\"",
+    "ventas": "npm start --prefix rc-ventas -- --port 4206",
+    "dev:ventas": "concurrently -n \"SHELL,VENTAS\" -c \"blue,cyan\" \"npm run shell\" \"npm run ventas\""
   },
   "devDependencies": {
     "concurrently": "^9.0.0"
