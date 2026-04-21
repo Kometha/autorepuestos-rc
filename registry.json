@@ -55,6 +55,17 @@
         "qa": "",
         "prod": ""
       }
+    },
+    {
+      "name": "rc-ventas",
+      "slug": "ventas",
+      "label": "Ventas",
+      "port": 4206,
+      "urls": {
+        "local": "http://localhost:4206/remoteEntry.json",
+        "qa": "",
+        "prod": ""
+      }
     }
   ]
 }
